@@ -3,6 +3,8 @@
 Destination picker for new terminal windows. Every ghostty window opens a menu:
 Herdr, Tmux, a plain shell, or SSH into any host in `~/.ssh/config`.
 
+![selecta terminal menu](assets/selecta-menu.png)
+
 ## Install
 
 ```sh
