@@ -1,4 +1,4 @@
-# term-menu
+# selecta
 
 Destination picker for new terminal windows. Every ghostty window opens a menu:
 Herdr, Tmux, a plain shell, or SSH into any host in `~/.ssh/config`.
@@ -9,15 +9,15 @@ Herdr, Tmux, a plain shell, or SSH into any host in `~/.ssh/config`.
 ./install.sh
 ```
 
-- Symlinks `tmenu` to `~/.local/bin/tmenu`.
+- Symlinks `selecta` to `~/.local/bin/selecta`.
 - Replaces the `command =` line in the ghostty config
   (`~/Library/Application Support/com.mitchellh.ghostty/config.ghostty`) with
-  `command = ~/.local/bin/tmenu`, keeping a backup at `config.ghostty.bak-tmenu`.
+  `command = ~/.local/bin/selecta`, keeping a backup at `config.ghostty.bak-selecta`.
 - Idempotent; the `env = PATH=...` line is left untouched.
 
 Restart ghostty (or open a new window). To restore the old behavior, point
 `command =` back at `ghostty-herdr-session` (see the backup file) and remove
-the `~/.local/bin/tmenu` symlink.
+the `~/.local/bin/selecta` symlink.
 
 ## Menu
 
@@ -28,8 +28,8 @@ the `~/.local/bin/tmenu` symlink.
 | `shell`      | Fresh interactive login zsh                        |
 | `ssh: <host>`| `ssh <host>`; quitting closes the window          |
 
-Esc or Ctrl-C lands on a plain shell. Set `TMENU_SKIP=1` (e.g. a second ghostty
-profile, or `ghostty -e env TMENU_SKIP=1 tmenu`) to skip the menu entirely.
+Esc or Ctrl-C lands on a plain shell. Set `SELECTA_SKIP=1` (e.g. a second ghostty
+profile, or `ghostty -e env SELECTA_SKIP=1 selecta`) to skip the menu entirely.
 
 ## Requirements
 

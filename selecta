@@ -1,8 +1,8 @@
 #!/bin/zsh
-# term-menu: destination picker for new terminal windows.
+# selecta: destination picker for new terminal windows.
 
-tmenu_hosts() {
-  local config="${SSH_CONFIG_FILE:-$HOME/.ssh/config}"
+selecta_hosts() {
+  local config="${SELECTA_SSH_CONFIG_FILE:-$HOME/.ssh/config}"
   [[ -r "$config" ]] || return 0
   local line rest h
   while IFS= read -r line; do
@@ -16,17 +16,17 @@ tmenu_hosts() {
   done < "$config" | sort -u
 }
 
-tmenu_entries() {
+selecta_entries() {
   command -v herdr >/dev/null 2>&1 && print -r -- "herdr"
   command -v tmux  >/dev/null 2>&1 && print -r -- "tmux"
   print -r -- "shell"
   local h
-  for h in ${(f)"$(tmenu_hosts)"}; do
+  for h in ${(f)"$(selecta_hosts)"}; do
     print -r -- "ssh: $h"
   done
 }
 
-tmenu_dispatch() {
+selecta_dispatch() {
   local sel="$1" mode="${2:-run}"
   if [[ "$mode" == print ]]; then
     case "$sel" in
@@ -50,23 +50,23 @@ tmenu_dispatch() {
 main() {
   export PATH="$HOME/.local/bin:/opt/homebrew/bin:$PATH"
   if [[ "${1:-}" == --print ]]; then
-    tmenu_dispatch "${2:-shell}" print
+    selecta_dispatch "${2:-shell}" print
     return $?
   fi
-  if [[ "${TMENU_SKIP:-0}" == 1 ]]; then
+  if [[ "${SELECTA_SKIP:-0}" == 1 ]]; then
     exec /bin/zsh -il
   fi
   if ! command -v fzf >/dev/null 2>&1; then
-    print -u2 "tmenu: fzf not found; starting plain shell"
+    print -u2 "selecta: fzf not found; starting plain shell"
     exec /bin/zsh -il
   fi
   local sel
-  if ! sel="$(tmenu_entries | fzf --height=100% --border --no-multi \
+  if ! sel="$(selecta_entries | fzf --height=100% --border --no-multi \
       --header='herdr  tmux  shell  ssh: <host>   (Esc = plain shell)' \
       --prompt='Open: ')"; then
     exec /bin/zsh -il
   fi
-  tmenu_dispatch "$sel"
+  selecta_dispatch "$sel"
 }
 
 if [[ ${ZSH_EVAL_CONTEXT} == toplevel ]]; then
