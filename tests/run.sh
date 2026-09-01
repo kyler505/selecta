@@ -41,4 +41,24 @@ check "dispatch herdr"     "herdr; exec /bin/zsh -il"  "$(tmenu_dispatch herdr p
 check "dispatch shell"     "exec /bin/zsh -il"         "$(tmenu_dispatch shell print)"
 check "dispatch garbage"   "exec /bin/zsh -il"         "$(tmenu_dispatch 'bogus' print)"
 
+# install.sh: config rewrite, idempotency, env overrides.
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "$tmpdir" "$tmpbin"' EXIT
+cp "$SCRIPT_DIR/fixtures/ghostty_config" "$tmpdir/config.ghostty"
+export TMENU_BIN_DIR="$tmpdir/bin" GHOSTTY_CONFIG="$tmpdir/config.ghostty"
+"$SCRIPT_DIR/../install.sh" >/dev/null
+check "install rewrites command line" \
+  "command = $tmpdir/bin/tmenu" \
+  "$(grep -m1 '^command = ' "$tmpdir/config.ghostty")"
+check "install keeps env line" \
+  "env = PATH=/Users/kcao/.bun/bin:/opt/homebrew/bin:/usr/bin:/bin" \
+  "$(grep -m1 '^env = ' "$tmpdir/config.ghostty")"
+check "install creates backup" \
+  "1" "$(test -f "$tmpdir/config.ghostty.bak-tmenu" && print 1 || print 0)"
+check "install symlinks tmenu" \
+  "1" "$(test -L "$tmpdir/bin/tmenu" && print 1 || print 0)"
+"$SCRIPT_DIR/../install.sh" >/dev/null
+check "install is idempotent" \
+  "1" "$(grep -c '^command = ' "$tmpdir/config.ghostty")"
+
 exit $fail
