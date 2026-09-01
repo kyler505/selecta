@@ -26,7 +26,49 @@ tmenu_entries() {
   done
 }
 
+tmenu_dispatch() {
+  local sel="$1" mode="${2:-run}"
+  if [[ "$mode" == print ]]; then
+    case "$sel" in
+      herdr)   print -r -- "herdr; exec /bin/zsh -il" ;;
+      tmux)    print -r -- "exec tmux new -A" ;;
+      shell)   print -r -- "exec /bin/zsh -il" ;;
+      ssh:\ *) print -r -- "exec ssh ${sel#ssh: }" ;;
+      *)       print -r -- "exec /bin/zsh -il" ;;
+    esac
+    return 0
+  fi
+  case "$sel" in
+    herdr)   herdr; exec /bin/zsh -il ;;
+    tmux)    exec tmux new -A ;;
+    shell)   exec /bin/zsh -il ;;
+    ssh:\ *) exec ssh "${sel#ssh: }" ;;
+    *)       exec /bin/zsh -il ;;
+  esac
+}
+
+main() {
+  export PATH="$HOME/.local/bin:/opt/homebrew/bin:$PATH"
+  if [[ "${1:-}" == --print ]]; then
+    tmenu_dispatch "${2:-shell}" print
+    return $?
+  fi
+  if [[ "${TMENU_SKIP:-0}" == 1 ]]; then
+    exec /bin/zsh -il
+  fi
+  if ! command -v fzf >/dev/null 2>&1; then
+    print -u2 "tmenu: fzf not found; starting plain shell"
+    exec /bin/zsh -il
+  fi
+  local sel
+  if ! sel="$(tmenu_entries | fzf --height=100% --border --no-multi \
+      --header='herdr  tmux  shell  ssh: <host>   (Esc = plain shell)' \
+      --prompt='Open: ')"; then
+    exec /bin/zsh -il
+  fi
+  tmenu_dispatch "$sel"
+}
+
 if [[ ${ZSH_EVAL_CONTEXT} == toplevel ]]; then
-  main() { :; }
   main "$@"
 fi

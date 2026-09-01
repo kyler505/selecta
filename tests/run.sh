@@ -34,4 +34,11 @@ entries="$(tmenu_entries)"
 check "entries without tmux/herdr" \
   $'shell\nssh: homelab\nssh: hp\nssh: opmicro' "$entries"
 
+# Dispatch dry-run via --print (avoids exec in tests).
+check "dispatch tmux"      "exec tmux new -A"          "$(tmenu_dispatch tmux print)"
+check "dispatch ssh"       "exec ssh hp"               "$(tmenu_dispatch 'ssh: hp' print)"
+check "dispatch herdr"     "herdr; exec /bin/zsh -il"  "$(tmenu_dispatch herdr print)"
+check "dispatch shell"     "exec /bin/zsh -il"         "$(tmenu_dispatch shell print)"
+check "dispatch garbage"   "exec /bin/zsh -il"         "$(tmenu_dispatch 'bogus' print)"
+
 exit $fail
