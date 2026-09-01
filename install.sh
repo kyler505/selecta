@@ -14,7 +14,9 @@ if [ ! -f "$CONFIG" ]; then
   exit 1
 fi
 
-cp "$CONFIG" "$CONFIG.bak-tmenu"
+if [ ! -e "$CONFIG.bak-tmenu" ] && [ ! -L "$CONFIG.bak-tmenu" ]; then
+  cp "$CONFIG" "$CONFIG.bak-tmenu"
+fi
 
 if grep -q "^command = .*ghostty-herdr-session" "$CONFIG"; then
   sed -i '' "s|^command = .*ghostty-herdr-session|command = $MENU_BIN|" "$CONFIG"

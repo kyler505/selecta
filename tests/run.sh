@@ -16,7 +16,8 @@ check() { # name expected actual
 export SSH_CONFIG_FILE="$SCRIPT_DIR/fixtures/ssh_config"
 
 hosts="$(tmenu_hosts)"
-check "hosts parsed, sorted, patterns skipped" $'homelab\nhp\nopmicro' "$hosts"
+check "hosts parsed, sorted, patterns skipped, case-insensitive directives" \
+  $'homelab\nhp\nlower\nmixed\nopmicro\nupper' "$hosts"
 
 # Entry assembly: fake binaries in a temp dir, real PATH stripped of tmux/herdr.
 tmpbin="$(mktemp -d)"
@@ -27,12 +28,12 @@ chmod +x "$tmpbin/tmux" "$tmpbin/herdr"
 export PATH="$tmpbin:/opt/homebrew/bin:/usr/bin:/bin"
 entries="$(tmenu_entries)"
 check "entries with tmux+herdr present" \
-  $'herdr\ntmux\nshell\nssh: homelab\nssh: hp\nssh: opmicro' "$entries"
+  $'herdr\ntmux\nshell\nssh: homelab\nssh: hp\nssh: lower\nssh: mixed\nssh: opmicro\nssh: upper' "$entries"
 
 export PATH="/usr/bin:/bin"
 entries="$(tmenu_entries)"
 check "entries without tmux/herdr" \
-  $'shell\nssh: homelab\nssh: hp\nssh: opmicro' "$entries"
+  $'shell\nssh: homelab\nssh: hp\nssh: lower\nssh: mixed\nssh: opmicro\nssh: upper' "$entries"
 
 # Dispatch dry-run via --print (avoids exec in tests).
 check "dispatch tmux"      "exec tmux new -A"          "$(tmenu_dispatch tmux print)"
@@ -58,6 +59,9 @@ check "install creates backup" \
 check "install symlinks tmenu" \
   "1" "$(test -L "$tmpdir/bin/tmenu" && print 1 || print 0)"
 "$SCRIPT_DIR/../install.sh" >/dev/null
+check "install preserves original backup" \
+  "command = /Users/kcao/.local/bin/ghostty-herdr-session" \
+  "$(grep -m1 '^command = ' "$tmpdir/config.ghostty.bak-tmenu")"
 check "install is idempotent" \
   "1" "$(grep -c '^command = ' "$tmpdir/config.ghostty")"
 

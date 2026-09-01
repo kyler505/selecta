@@ -7,8 +7,8 @@ tmenu_hosts() {
   local line rest h
   while IFS= read -r line; do
     line="${line%%\#*}"                                  # strip comments
-    [[ "$line" =~ ^[[:space:]]*Host[[:space:]] ]] || continue
-    rest="${line#*Host}"
+    [[ "$line" =~ ^[[:space:]]*[Hh][Oo][Ss][Tt][[:space:]] ]] || continue
+    rest="${line#*[Hh][Oo][Ss][Tt]}"
     for h in ${=rest}; do                                # split multi-name lines
       [[ "$h" == *'*'* || "$h" == *'?'* || "$h" == *'!'* ]] && continue
       print -r -- "$h"

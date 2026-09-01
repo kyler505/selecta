@@ -1,4 +1,10 @@
 # main machines
+host lower
+  HostName lower.example
+HoSt mixed
+  HostName mixed.example
+HOST upper
+  HostName upper.example
 Host hp
   HostName 100.68.121.125
   User kyler
