@@ -1,0 +1,12 @@
+# main machines
+Host hp
+  HostName 100.68.121.125
+  User kyler
+
+Host homelab opmicro
+  HostName 100.107.94.63
+  User cao
+
+Host *           # wildcard, must be skipped
+Host !prod       # negation, must be skipped
+Host work?       # pattern, must be skipped
