@@ -16,7 +16,7 @@ tmenu_hosts() {
   done < "$config" | sort -u
 }
 
-if [[ "$(basename "$0")" == "tmenu" ]]; then
+if [[ ${ZSH_EVAL_CONTEXT} == toplevel ]]; then
   main() { :; }
   main "$@"
 fi
