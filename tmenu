@@ -1,0 +1,74 @@
+#!/bin/zsh
+# term-menu: destination picker for new terminal windows.
+
+tmenu_hosts() {
+  local config="${SSH_CONFIG_FILE:-$HOME/.ssh/config}"
+  [[ -r "$config" ]] || return 0
+  local line rest h
+  while IFS= read -r line; do
+    line="${line%%\#*}"                                  # strip comments
+    [[ "$line" =~ ^[[:space:]]*[Hh][Oo][Ss][Tt][[:space:]] ]] || continue
+    rest="${line#*[Hh][Oo][Ss][Tt]}"
+    for h in ${=rest}; do                                # split multi-name lines
+      [[ "$h" == *'*'* || "$h" == *'?'* || "$h" == *'!'* ]] && continue
+      print -r -- "$h"
+    done
+  done < "$config" | sort -u
+}
+
+tmenu_entries() {
+  command -v herdr >/dev/null 2>&1 && print -r -- "herdr"
+  command -v tmux  >/dev/null 2>&1 && print -r -- "tmux"
+  print -r -- "shell"
+  local h
+  for h in ${(f)"$(tmenu_hosts)"}; do
+    print -r -- "ssh: $h"
+  done
+}
+
+tmenu_dispatch() {
+  local sel="$1" mode="${2:-run}"
+  if [[ "$mode" == print ]]; then
+    case "$sel" in
+      herdr)   print -r -- "herdr; exec /bin/zsh -il" ;;
+      tmux)    print -r -- "exec tmux new -A" ;;
+      shell)   print -r -- "exec /bin/zsh -il" ;;
+      ssh:\ *) print -r -- "exec ssh ${sel#ssh: }" ;;
+      *)       print -r -- "exec /bin/zsh -il" ;;
+    esac
+    return 0
+  fi
+  case "$sel" in
+    herdr)   herdr; exec /bin/zsh -il ;;
+    tmux)    exec tmux new -A ;;
+    shell)   exec /bin/zsh -il ;;
+    ssh:\ *) exec ssh "${sel#ssh: }" ;;
+    *)       exec /bin/zsh -il ;;
+  esac
+}
+
+main() {
+  export PATH="$HOME/.local/bin:/opt/homebrew/bin:$PATH"
+  if [[ "${1:-}" == --print ]]; then
+    tmenu_dispatch "${2:-shell}" print
+    return $?
+  fi
+  if [[ "${TMENU_SKIP:-0}" == 1 ]]; then
+    exec /bin/zsh -il
+  fi
+  if ! command -v fzf >/dev/null 2>&1; then
+    print -u2 "tmenu: fzf not found; starting plain shell"
+    exec /bin/zsh -il
+  fi
+  local sel
+  if ! sel="$(tmenu_entries | fzf --height=100% --border --no-multi \
+      --header='herdr  tmux  shell  ssh: <host>   (Esc = plain shell)' \
+      --prompt='Open: ')"; then
+    exec /bin/zsh -il
+  fi
+  tmenu_dispatch "$sel"
+}
+
+if [[ ${ZSH_EVAL_CONTEXT} == toplevel ]]; then
+  main "$@"
+fi
