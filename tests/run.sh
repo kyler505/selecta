@@ -37,7 +37,9 @@ check "entries without tmux/herdr" \
 
 # Dispatch dry-run via --print (avoids exec in tests).
 check "dispatch tmux"      "exec tmux new -A"          "$(selecta_dispatch tmux print)"
-check "dispatch ssh"       "exec ssh hp"               "$(selecta_dispatch 'ssh: hp' print)"
+check "dispatch ssh with fastfetch" \
+  "exec ssh -t hp 'command -v fastfetch >/dev/null 2>&1 && fastfetch; exec \"\${SHELL:-/bin/sh}\" -l'" \
+  "$(selecta_dispatch 'ssh: hp' print)"
 check "dispatch herdr"     "herdr; exec /bin/zsh -il"  "$(selecta_dispatch herdr print)"
 check "dispatch shell"     "exec /bin/zsh -il"         "$(selecta_dispatch shell print)"
 check "dispatch garbage"   "exec /bin/zsh -il"         "$(selecta_dispatch 'bogus' print)"

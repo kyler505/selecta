@@ -28,12 +28,13 @@ the `~/.local/bin/selecta` symlink.
 | `herdr`      | Launch/attach Herdr; returns to a zsh prompt after detach |
 | `tmux`       | `tmux new -A` (attach most-recent session, else create); quitting closes the window |
 | `shell`      | Fresh interactive login zsh                        |
-| `ssh: <host>`| `ssh <host>`; quitting closes the window          |
+| `ssh: <host>`| `ssh -t <host>`; runs `fastfetch` if available, then an interactive shell; quitting closes the window |
 
 Esc or Ctrl-C lands on a plain shell. Set `SELECTA_SKIP=1` (e.g. a second ghostty
 profile, or `ghostty -e env SELECTA_SKIP=1 selecta`) to skip the menu entirely.
 
 ## Requirements
 
-zsh, fzf, tmux, herdr (the menu omits entries for missing binaries). Hosts come
-from `~/.ssh/config`; pattern hosts (`*`, `?`, `!`) are skipped.
+zsh, fzf, tmux, herdr, and optionally fastfetch on remote hosts (the menu omits
+entries for missing local binaries). Hosts come from `~/.ssh/config`; pattern
+hosts (`*`, `?`, `!`) are skipped.

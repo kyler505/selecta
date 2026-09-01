@@ -33,7 +33,7 @@ selecta_dispatch() {
       herdr)   print -r -- "herdr; exec /bin/zsh -il" ;;
       tmux)    print -r -- "exec tmux new -A" ;;
       shell)   print -r -- "exec /bin/zsh -il" ;;
-      ssh:\ *) print -r -- "exec ssh ${sel#ssh: }" ;;
+      ssh:\ *) print -r -- "exec ssh -t ${sel#ssh: } 'command -v fastfetch >/dev/null 2>&1 && fastfetch; exec \"\${SHELL:-/bin/sh}\" -l'" ;;
       *)       print -r -- "exec /bin/zsh -il" ;;
     esac
     return 0
@@ -42,7 +42,7 @@ selecta_dispatch() {
     herdr)   herdr; exec /bin/zsh -il ;;
     tmux)    exec tmux new -A ;;
     shell)   exec /bin/zsh -il ;;
-    ssh:\ *) exec ssh "${sel#ssh: }" ;;
+    ssh:\ *) exec ssh -t "${sel#ssh: }" 'command -v fastfetch >/dev/null 2>&1 && fastfetch; exec "${SHELL:-/bin/sh}" -l' ;;
     *)       exec /bin/zsh -il ;;
   esac
 }
