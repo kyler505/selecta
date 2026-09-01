@@ -16,6 +16,16 @@ tmenu_hosts() {
   done < "$config" | sort -u
 }
 
+tmenu_entries() {
+  command -v herdr >/dev/null 2>&1 && print -r -- "herdr"
+  command -v tmux  >/dev/null 2>&1 && print -r -- "tmux"
+  print -r -- "shell"
+  local h
+  for h in ${(f)"$(tmenu_hosts)"}; do
+    print -r -- "ssh: $h"
+  done
+}
+
 if [[ ${ZSH_EVAL_CONTEXT} == toplevel ]]; then
   main() { :; }
   main "$@"
