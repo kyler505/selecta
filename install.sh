@@ -18,10 +18,18 @@ if [ ! -e "$CONFIG.bak-selecta" ] && [ ! -L "$CONFIG.bak-selecta" ]; then
   cp "$CONFIG" "$CONFIG.bak-selecta"
 fi
 
+# Rewrite through a temp file rather than `sed -i`: the in-place flag needs a
+# mandatory empty arg on BSD sed and rejects one on GNU sed, so no single
+# invocation works on both macOS and Linux/WSL.
+rewrite() { # pattern
+  sed "s|$1|command = $MENU_BIN|" "$CONFIG" > "$CONFIG.selecta-tmp"
+  mv "$CONFIG.selecta-tmp" "$CONFIG"
+}
+
 if grep -q "^command = .*ghostty-herdr-session" "$CONFIG"; then
-  sed -i '' "s|^command = .*ghostty-herdr-session|command = $MENU_BIN|" "$CONFIG"
+  rewrite "^command = .*ghostty-herdr-session"
 elif grep -q "^command = .*tmenu$" "$CONFIG"; then
-  sed -i '' "s|^command = .*tmenu$|command = $MENU_BIN|" "$CONFIG"
+  rewrite "^command = .*tmenu$"
 elif grep -q "^command = $MENU_BIN" "$CONFIG"; then
   : # already installed; keep idempotent
 else

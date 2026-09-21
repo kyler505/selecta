@@ -19,21 +19,31 @@ hosts="$(selecta_hosts)"
 check "hosts parsed, sorted, patterns skipped, case-insensitive directives" \
   $'homelab\nhp\nlower\nmixed\nopmicro\nupper' "$hosts"
 
-# Entry assembly: fake binaries in a temp dir, real PATH stripped of tmux/herdr.
+# Entry assembly: fake binaries in a temp dir, plus a bare dir holding only the
+# externals selecta itself shells out to (sort). The real PATH is kept out of
+# both, or the host's own tmux (/usr/bin/tmux on Linux) makes the "absent"
+# expectations unreachable.
+real_path="$PATH"
 tmpbin="$(mktemp -d)"
-trap 'rm -rf "$tmpbin"' EXIT
-touch "$tmpbin/tmux" "$tmpbin/herdr"
-chmod +x "$tmpbin/tmux" "$tmpbin/herdr"
+barebin="$(mktemp -d)"
+trap 'rm -rf "$tmpbin" "$barebin"' EXIT
+for fake in tmux herdr; do
+  touch "$tmpbin/$fake"
+  chmod +x "$tmpbin/$fake"
+done
+ln -s "$(command -v sort)" "$barebin/sort"
 
-export PATH="$tmpbin:/opt/homebrew/bin:/usr/bin:/bin"
+export PATH="$tmpbin:$barebin"
 entries="$(selecta_entries)"
 check "entries with tmux+herdr present" \
   $'herdr\ntmux\nshell\nssh: homelab\nssh: hp\nssh: lower\nssh: mixed\nssh: opmicro\nssh: upper' "$entries"
 
-export PATH="/usr/bin:/bin"
+export PATH="$barebin"
 entries="$(selecta_entries)"
 check "entries without tmux/herdr" \
   $'shell\nssh: homelab\nssh: hp\nssh: lower\nssh: mixed\nssh: opmicro\nssh: upper' "$entries"
+
+export PATH="$real_path"
 
 # Dispatch dry-run via --print (avoids exec in tests).
 check "dispatch tmux"      "exec tmux new -A"          "$(selecta_dispatch tmux print)"
@@ -46,7 +56,7 @@ check "dispatch garbage"   "exec /bin/zsh -il"         "$(selecta_dispatch 'bogu
 
 # install.sh: config rewrite, idempotency, env overrides.
 tmpdir="$(mktemp -d)"
-trap 'rm -rf "$tmpdir" "$tmpbin"' EXIT
+trap 'rm -rf "$tmpdir" "$tmpbin" "$barebin"' EXIT
 cp "$SCRIPT_DIR/fixtures/ghostty_config" "$tmpdir/config.ghostty"
 export SELECTA_BIN_DIR="$tmpdir/bin" SELECTA_GHOSTTY_CONFIG="$tmpdir/config.ghostty"
 "$SCRIPT_DIR/../install.sh" >/dev/null
