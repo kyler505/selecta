@@ -1,11 +1,12 @@
 # selecta
 
-Destination picker for new terminal windows. Two scripts, one per platform:
+Destination picker for new terminal windows. Two scripts with the same shape,
+one per platform:
 
 - `selecta` (zsh) - ghostty on macOS, and a shell inside WSL. Menu: Herdr,
   Tmux, a plain shell, or SSH into any host in `~/.ssh/config`.
-- `selecta.ps1` (PowerShell 7) - WezTerm on Windows. Menu: PowerShell 7, WSL,
-  Windows herdr.
+- `selecta.ps1` (PowerShell 7) - WezTerm on Windows. Same fzf menu, with WSL
+  in place of Tmux and PowerShell 7 as the plain shell.
 
 ![selecta terminal menu](assets/selecta-menu-20260902-tlpv.png)
 
@@ -56,18 +57,18 @@ config.default_prog = {
 }
 ```
 
-| Entry   | Action                                                      |
-| ------- | ----------------------------------------------------------- |
-| `pwsh`  | `pwsh -NoLogo` (PowerShell 7 with your profile)              |
-| `wsl`   | `wsl.exe -d Ubuntu -- /bin/sh -c 'cd ~ && exec /usr/bin/zsh -l'` |
-| `herdr` | Windows herdr; returns to a PowerShell prompt after detach   |
+| Entry         | Action                                                     |
+| ------------- | ---------------------------------------------------------- |
+| `herdr`       | Windows herdr; returns to a PowerShell prompt after detach |
+| `wsl`         | `wsl.exe -d Ubuntu -- /bin/sh -c 'cd ~ && exec /usr/bin/zsh -l'` |
+| `shell`       | `pwsh -NoLogo` (PowerShell 7 with your profile)            |
+| `ssh: <host>` | `ssh -t <host>`; runs `fastfetch` if available, then an interactive shell; quitting closes the window |
 
-Up/Down (or `j`/`k`) and `1`-`3` move, Enter opens, Esc or Ctrl-C opens a plain
-PowerShell. An entry is omitted when its binary is missing. Set
-`$env:SELECTA_SKIP=1` to skip the menu, `$env:SELECTA_WSL_DISTRO` to use a
-distro other than `Ubuntu`. There are no SSH entries: herdr owns remote
-machines through its saved-machine list.
+Esc or Ctrl-C lands on a plain shell. Set `$env:SELECTA_SKIP=1` to skip the menu
+entirely, and `$env:SELECTA_WSL_DISTRO` to use a distro other than `Ubuntu`.
 
-Requirements: PowerShell 7, `wsl.exe`, and the Windows herdr build. No fzf.
+Requirements: PowerShell 7, fzf (`scoop install fzf`), `wsl.exe`, the Windows
+herdr build, and optionally fastfetch on remote hosts. The menu omits entries
+for missing local binaries. Hosts come from `~/.ssh/config` on the Windows side.
 
 Tests: `pwsh -NoProfile -File tests/run.ps1` (Windows), `tests/run.sh` (zsh).

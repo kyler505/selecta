@@ -16,8 +16,9 @@ wrong side of the boundary.
 
 ## Goal
 
-A new WezTerm window opens PowerShell 7 and shows a Windows-side picker with
-three destinations: PowerShell 7, WSL, and Windows herdr.
+A new WezTerm window opens PowerShell 7 and shows the same selecta menu the zsh
+script shows, with Windows destinations: Windows herdr, WSL, a plain
+PowerShell 7, and one entry per host in the Windows `~/.ssh/config`.
 
 ## Decisions
 
@@ -31,12 +32,12 @@ three destinations: PowerShell 7, WSL, and Windows herdr.
   `{ 'pwsh', '-NoLogo', '-NoProfile', '-File',
   'C:\Users\kcao\.local\share\selecta\selecta.ps1' }`. This is a one-time
   config edit, so an installer that rewrites Lua is not justified.
-- Built-in key picker, no fzf: fzf is not installed on Windows, and a
-  three-entry list does not need fuzzy search. Up/Down or `1`-`3` moves, Enter
-  opens, Esc opens a plain PowerShell.
-- No SSH host list on the Windows side. herdr owns remote machines now, and the
-  only host in the Windows `~/.ssh/config` is `wsl`, which already has its own
-  entry.
+- Same fzf menu as the zsh script (`--height=100% --border --no-multi`, a
+  header, `Open: ` prompt), installed with `scoop install fzf`. A second,
+  hand-rolled picker on one platform would be a second UX to keep in sync.
+- Same entry order as the zsh script, with the platform substitutions: `tmux`
+  becomes `wsl`, and `shell` is PowerShell 7 rather than zsh. SSH hosts come
+  from the Windows `~/.ssh/config`, parsed by the same rules.
 - The `herdr` entry starts the local Windows herdr server. WSL panes come from
   herdr's saved `WSL` machine, not from this menu.
 
@@ -44,27 +45,28 @@ three destinations: PowerShell 7, WSL, and Windows herdr.
 
 `selecta.ps1`, one file, small testable functions:
 
+- `Get-SelectaHosts` - parse `~/.ssh/config` `Host` lines, strip comments, drop
+  pattern hosts (`*`, `?`, `!`), split multi-name lines, sort unique.
+  `$env:SELECTA_SSH_CONFIG_FILE` overrides the path, as in the zsh tests.
 - `Get-SelectaEntries` - fixed order, an entry is omitted when its binary is
-  missing: `pwsh` (always, it is the host process), `wsl` (needs `wsl.exe`),
-  `herdr` (needs `herdr`).
+  missing: `herdr`, `wsl`, `shell` (always), then `ssh: <host>` per host.
 - `Get-SelectaTarget -Entry <name>` - single source of truth for dispatch. It
   returns the executable, its argument array, and whether a shell follows.
   Unknown entries resolve to the plain-shell target.
 - `Get-SelectaCommand -Entry <name>` - renders the target as one command string
-  for `-Print` and for tests.
-- `Show-SelectaMenu` - draws the list, reads keys, returns the selection. The
-  highlight uses the `#89dceb` accent shared with `wezterm.lua` and the herdr
-  config.
-- `main` - runs only when the file is executed, not dot-sourced, so tests can
-  load the functions.
+  for `-Print` and for tests, quoting arguments that contain spaces.
+- `main` - `-Print` dry-run, `SELECTA_SKIP` bypass, fzf-missing fallback, then
+  the fzf menu. It runs only when the file is executed, not dot-sourced, so
+  tests can load the functions.
 
 Targets:
 
-| Entry   | Command                                                            |
-| ------- | ------------------------------------------------------------------ |
-| `pwsh`  | `pwsh -NoLogo`                                                     |
-| `wsl`   | `wsl.exe -d Ubuntu -- /bin/sh -c 'cd ~ && exec /usr/bin/zsh -l'`   |
-| `herdr` | `herdr`, then `pwsh -NoLogo` after detach                          |
+| Entry         | Command                                                          |
+| ------------- | ---------------------------------------------------------------- |
+| `herdr`       | `herdr`, then `pwsh -NoLogo` after detach                        |
+| `wsl`         | `wsl.exe -d Ubuntu -- /bin/sh -c 'cd ~ && exec /usr/bin/zsh -l'` |
+| `shell`       | `pwsh -NoLogo`                                                   |
+| `ssh: <host>` | `ssh -t <host> 'export PATH=...; fastfetch; exec "${SHELL:-/bin/sh}" -l'` (identical remote command to the zsh version) |
 
 The home directory comes from a shell-side `cd ~`, not `wsl --cd ~`: PowerShell
 resolves a bare `~` argument to the Windows home before `wsl.exe` sees it, so
@@ -92,21 +94,25 @@ after detach.
 
 ## Error handling
 
-- Input redirected or no console - print a notice, open PowerShell.
+- fzf missing - print a one-line notice, open PowerShell. Never block terminal
+  use.
 - `wsl.exe` or `herdr` missing - the entry is absent from the menu.
-- Esc, Ctrl-C, or an unknown selection - plain PowerShell.
+- No `~/.ssh/config` or no hosts - no SSH entries.
+- Esc, Ctrl-C, empty or unknown selection - plain PowerShell.
 
 ## Testing
 
-- `tests/run.ps1`: `Get-SelectaEntries` with a stripped `PATH` (only `pwsh`
-  survives) and with the real one; `Get-SelectaCommand` for each entry plus a
-  garbage entry; `SELECTA_WSL_DISTRO` honored.
-- Manual smoke test in a real WezTerm window: the menu renders, `pwsh` gives a
-  prompt, `wsl` lands in `/home/kcao` under zsh, `herdr` starts the Windows
-  server.
+- `tests/run.ps1` mirrors `tests/run.sh` and reuses `tests/fixtures/ssh_config`:
+  host parsing (patterns skipped, multi-name lines split, sorting,
+  case-insensitive directives), entry assembly with fake binaries on a stripped
+  `PATH`, a missing ssh config, dispatch for every entry plus a garbage entry,
+  and `SELECTA_WSL_DISTRO`.
+- Manual smoke test in a real WezTerm window: the fzf menu renders, `shell`
+  gives a PowerShell prompt, `wsl` lands in `/home/kcao` under zsh, `herdr`
+  starts the Windows server.
 
 ## Non-goals
 
 - No change to the zsh `selecta` or its ghostty installer.
-- No SSH entries, no herdr machine listing, no tmux entry on Windows.
+- No herdr machine listing and no tmux entry on Windows.
 - No automated rewrite of `wezterm.lua`.
