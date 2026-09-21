@@ -1,11 +1,17 @@
 # selecta
 
-Destination picker for new terminal windows. Every ghostty window opens a menu:
-Herdr, Tmux, a plain shell, or SSH into any host in `~/.ssh/config`.
+Destination picker for new terminal windows. Two scripts, one per platform:
+
+- `selecta` (zsh) - ghostty on macOS, and a shell inside WSL. Menu: Herdr,
+  Tmux, a plain shell, or SSH into any host in `~/.ssh/config`.
+- `selecta.ps1` (PowerShell 7) - WezTerm on Windows. Menu: PowerShell 7, WSL,
+  Windows herdr.
 
 ![selecta terminal menu](assets/selecta-menu-20260902-tlpv.png)
 
-## Install
+## macOS and WSL (`selecta`)
+
+Install:
 
 ```sh
 ./install.sh
@@ -21,7 +27,7 @@ Restart ghostty (or open a new window). To restore the old behavior, point
 `command =` back at `ghostty-herdr-session` (see the backup file) and remove
 the `~/.local/bin/selecta` symlink.
 
-## Menu
+Menu:
 
 | Entry        | Action                                             |
 | ------------ | -------------------------------------------------- |
@@ -33,8 +39,35 @@ the `~/.local/bin/selecta` symlink.
 Esc or Ctrl-C lands on a plain shell. Set `SELECTA_SKIP=1` (e.g. a second ghostty
 profile, or `ghostty -e env SELECTA_SKIP=1 selecta`) to skip the menu entirely.
 
-## Requirements
+Requirements:
 
 zsh, fzf, tmux, herdr, and optionally fastfetch on remote hosts (the menu omits
 entries for missing local binaries). Hosts come from `~/.ssh/config`; pattern
 hosts (`*`, `?`, `!`) are skipped.
+
+## Windows (`selecta.ps1`)
+
+No installer: point WezTerm at the script in `~/.config/wezterm/wezterm.lua`.
+
+```lua
+config.default_prog = {
+  'pwsh', '-NoLogo', '-NoProfile', '-File',
+  'C:\\Users\\kcao\\.local\\share\\selecta\\selecta.ps1',
+}
+```
+
+| Entry   | Action                                                      |
+| ------- | ----------------------------------------------------------- |
+| `pwsh`  | `pwsh -NoLogo` (PowerShell 7 with your profile)              |
+| `wsl`   | `wsl.exe -d Ubuntu -- /bin/sh -c 'cd ~ && exec /usr/bin/zsh -l'` |
+| `herdr` | Windows herdr; returns to a PowerShell prompt after detach   |
+
+Up/Down (or `j`/`k`) and `1`-`3` move, Enter opens, Esc or Ctrl-C opens a plain
+PowerShell. An entry is omitted when its binary is missing. Set
+`$env:SELECTA_SKIP=1` to skip the menu, `$env:SELECTA_WSL_DISTRO` to use a
+distro other than `Ubuntu`. There are no SSH entries: herdr owns remote
+machines through its saved-machine list.
+
+Requirements: PowerShell 7, `wsl.exe`, and the Windows herdr build. No fzf.
+
+Tests: `pwsh -NoProfile -File tests/run.ps1` (Windows), `tests/run.sh` (zsh).
